@@ -1,15 +1,18 @@
-TESTS=$(basename $(wildcard generated*.expr))
+TESTS=$(sort $(basename $(wildcard generated*.expr)))
 
-RC = ../../src/rc.opt
+RC=~/development/nox/target/debug/nox
+RT=../runtime.c
 
 .PHONY: check $(TESTS)
 
 check: $(TESTS)
 
 $(TESTS): %: %.expr
-	@RC_RUNTIME=../../runtime $(RC) $< && cat $@.input | ./$@ > $@.log && diff $@.log orig/$@.log
-	cat $@.input | $(RC) -i $< > $@.log && diff $@.log orig/$@.log
-	cat $@.input | $(RC) -s $< > $@.log && diff $@.log orig/$@.log
+	@printf "$@.."
+	@$(RC) compile $< > $@.s && gcc -m32 $(RT) $@.s -o $@ && cat $@.input | ./$@ > $@.log && diff $@.log orig/$@.log
+	@cat $@.input | $(RC) interpret $< > $@.log && diff $@.log orig/$@.log
+	@cat $@.input | $(RC) sm $< > $@.log && diff $@.log orig/$@.log
+	@printf " success\n"
 
 clean:
-	rm -f *.log *.s *~ $(TESTS)
+	rm -f test*.log *.s *~ $(TESTS)
